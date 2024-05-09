@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+  mongodb:
+    image: mongo
+    container_name: edutask-mongodb
+    environment:
+      - MONGO_INITDB_DATABASE=rootDb
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
+    ports:
+      - "27017:27017"
+    command: mongod --bind_ip_all
+
+  backend:
+    build: ./backend
+    container_name: edutask-backend
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URL=mongodb://root:root@mongodb:27017
+      - FLASK_BIND_IP=0.0.0.0
+      - PYTHONUNBUFFERED=1
+      - PORT=${PORT_BACKEND}
+    ports:
+      - "${PORT_BACKEND}:${PORT_BACKEND}"
+
+  frontend:
+    build: ./frontend
+    container_name: edutask-frontend
+    depends_on:
+      - mongodb
+      - backend
+    environment:
+      - HOST=0.0.0.0
+      - PORT=${PORT_FRONTEND}
+      - REACT_APP_BACKEND_PORT=${PORT_BACKEND}
+    ports:
+      - "${PORT_FRONTEND}:${PORT_FRONTEND}"
+    command: npm run start
+
+networks:
+  edutask:
+    driver: bridge
